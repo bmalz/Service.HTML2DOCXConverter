@@ -13,7 +13,7 @@ using DocumentFormat.OpenXml.Wordprocessing;
 namespace Service.HTML2DOCXConverter.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("convert")]
     public class ConverterController : ControllerBase
     {
         private readonly ILogger<ConverterController> _logger;
@@ -31,29 +31,30 @@ namespace Service.HTML2DOCXConverter.Controllers
             {
                 body = await reader.ReadToEndAsync();
             }
-            
-            if(string.IsNullOrWhiteSpace(body))
+
+            if (string.IsNullOrWhiteSpace(body))
                 return BadRequest();
 
             using (MemoryStream generatedDocument = new MemoryStream())
-     {
-          using (WordprocessingDocument package = WordprocessingDocument.Create(generatedDocument, WordprocessingDocumentType.Document))
-          {
-               MainDocumentPart mainPart = package.MainDocumentPart;
-               if (mainPart == null)
-               {
-                    mainPart = package.AddMainDocumentPart();
-                    new Document(new Body()).Save(mainPart);
-               }
+            {
+                using (WordprocessingDocument package = WordprocessingDocument.Create(generatedDocument, WordprocessingDocumentType.Document))
+                {
+                    MainDocumentPart mainPart = package.MainDocumentPart;
+                    if (mainPart == null)
+                    {
+                        mainPart = package.AddMainDocumentPart();
+                        new Document(new Body()).Save(mainPart);
+                    }
 
-               HtmlConverter converter = new HtmlConverter(mainPart);
-               converter.ParseHtml(body);
+                    HtmlConverter converter = new HtmlConverter(mainPart);
+                    converter.ParseHtml(body);
 
-               mainPart.Document.Save();
-          }
+                    mainPart.Document.Save();
+                    
+                }
 
-          return new FileStreamResult(generatedDocument, "application/octet-stream");
-     }
+                return new FileStreamResult(new MemoryStream(generatedDocument.ToArray()), "application/octet-stream");
+            }
         }
     }
 }
