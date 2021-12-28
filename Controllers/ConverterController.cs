@@ -27,16 +27,32 @@ namespace Service.HTML2DOCXConverter.Controllers
         [HttpPost]
         public async Task<IActionResult> Post()
         {
-            string body, footer, header = string.Empty;
+            string body = string.Empty;
 
             using (var reader = new System.IO.StreamReader(Request.Body))
-            {
                 body = await reader.ReadToEndAsync();
-            }
 
             if (string.IsNullOrWhiteSpace(body))
                 return BadRequest();
 
+            return new FileStreamResult(new MemoryStream(GenerateDocument(body)), "application/octet-stream");
+        }
+
+        [HttpPost("b64")]
+        public async Task<IActionResult> PostBase64() {
+             string body = string.Empty;
+
+            using (var reader = new System.IO.StreamReader(Request.Body))
+                body = await reader.ReadToEndAsync();
+
+            if (string.IsNullOrWhiteSpace(body))
+                return BadRequest();
+                
+            return Ok(Convert.ToBase64String(GenerateDocument(body)));
+        }
+
+        private byte[] GenerateDocument(string body) {
+            string footer, header = string.Empty;
             header = GetHeader(ref body);
             footer = GetFooter(ref body);
 
@@ -60,7 +76,7 @@ namespace Service.HTML2DOCXConverter.Controllers
                     mainPart.Document.Save();
                 }
 
-                return new FileStreamResult(new MemoryStream(generatedDocument.ToArray()), "application/octet-stream");
+                return generatedDocument.ToArray();
             }
         }
 
